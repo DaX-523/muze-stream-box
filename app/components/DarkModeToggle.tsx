@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// import { Button } from "@/components/ui/button"
 import { Moon, Sun } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -9,7 +8,6 @@ export default function DarkModeToggle() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // Check if dark mode is enabled in localStorage or system preferences
     const isDarkMode =
       localStorage.getItem("darkMode") === "true" ||
       (!("darkMode" in localStorage) &&
