@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "./lib/providers";
-import Redirect from "./components/redirect";
 import AppBar from "./components/AppBar";
 
 const geistSans = localFont({
@@ -32,7 +31,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <Redirect />
           <AppBar />
           {children}
         </Providers>

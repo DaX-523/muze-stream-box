@@ -1,18 +1,22 @@
+import { authOptions } from "@/app/lib/auth-options";
 import prisma from "@/app/lib/db";
+import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
-const ParseBodies = z.object({
-  creatorId: z.string(),
-});
-
-export async function POST(req: NextRequest) {
-  const data = ParseBodies.parse(await req.json());
+export async function POST() {
+  const session = await getServerSession(authOptions);
+  console.log("api", session);
+  if (!session?.user?.email) {
+    return NextResponse.json(
+      { success: false, message: "You must be logged in to create a stream" },
+      { status: 401 }
+    );
+  }
 
   try {
     await prisma.stream.create({
       data: {
-        userId: data.creatorId,
+        userId: session?.user?.id,
         isActive: true,
         created: new Date(),
         extractedId: "",

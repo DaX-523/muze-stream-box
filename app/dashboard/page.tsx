@@ -1,4 +1,3 @@
-import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
@@ -6,7 +5,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { Music, Users, Clock, BarChart2 } from "lucide-react";
-import Link from "next/link";
+import ActionButton from "./ButtonAction";
 
 export default function DashboardComponent() {
   return (
@@ -148,12 +147,7 @@ export default function DashboardComponent() {
         </div>
 
         <div className="mt-8 text-center">
-          <Button
-            asChild
-            className="bg-purple-900 text-white hover:bg-purple-800 dark:bg-purple-100 dark:text-purple-900 dark:hover:bg-purple-200"
-          >
-            <Link href="/stream">Start a New Stream</Link>
-          </Button>
+          <ActionButton />
         </div>
       </main>
     </div>
