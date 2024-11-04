@@ -10,49 +10,60 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { Music, Search, ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
-import { useToast } from "@/app/hooks/use-toast";
+import { toast, useToast } from "@/app/hooks/use-toast";
 import { useParams } from "next/navigation";
-// import { spotifyBaseUrl } from "@/app/lib/constants";
+import { spotifyBaseUrl } from "@/app/lib/constants";
+import { getRefreshToken } from "@/app/lib/spotify-auth-pkce";
+
+interface SearchResults {
+  id: string;
+  name: string;
+  artists: { name: string };
+  album: { name: string };
+  duration_ms: number;
+}
+
+interface QueueItem {
+  id: string;
+  name: string;
+  artist: string;
+  votes: number;
+}
 
 // Mock function to simulate Spotify API search
 const searchSpotify = async (query: string) => {
   // In a real app, this would call the Spotify API
-  // const track = await fetch(spotifyBaseUrl + "/search?q=track:" + query, {
-  //   headers: {
-  //     'Authorization': "Bearer " + token
-  //   }
-  // })
-  return [
+  const track = await fetch(
+    spotifyBaseUrl + "/search?q=track:" + query + "&type=track",
     {
-      id: "1",
-      name: "Song 1",
-      artist: "Artist 1",
-      album: "Album 1",
-      duration: "3:30",
-    },
-    {
-      id: "2",
-      name: "Song 2",
-      artist: "Artist 2",
-      album: "Album 2",
-      duration: "4:15",
-    },
-    {
-      id: "3",
-      name: "Song 3",
-      artist: "Artist 3",
-      album: "Album 3",
-      duration: "3:45",
-    },
-  ];
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("spotify_access_token"),
+      },
+    }
+  );
+  if (track.status === 401) {
+    localStorage.removeItem("spotify_access_token");
+    toast({
+      title: "Token expired",
+      description: "Refreshing token...",
+    });
+    await getRefreshToken();
+    toast({
+      title: "Token refreshed",
+      description: "Token refreshed successfully",
+    });
+  }
+  const data = await track.json();
+  console.log(data?.tracks?.items);
+  return data?.tracks?.items;
 };
 
 export default function Stream() {
   const param = useParams();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [queue, setQueue] = useState([
+  const [searchResults, setSearchResults] = useState<SearchResults[]>([]);
+  const [queue, setQueue] = useState<QueueItem[]>([
     { id: "4", name: "Queued Song 1", artist: "Artist 4", votes: 5 },
     { id: "5", name: "Queued Song 2", artist: "Artist 5", votes: 3 },
     { id: "6", name: "Queued Song 3", artist: "Artist 6", votes: 1 },
@@ -60,15 +71,23 @@ export default function Stream() {
   const [streamVotes, setStreamVotes] = useState(0);
 
   const handleSearch = async () => {
-    const results = await searchSpotify(searchQuery);
-    setSearchResults(results);
+    const results: SearchResults[] = await searchSpotify(searchQuery);
+    setSearchResults(results); // Type assertion to fix type error
   };
 
-  const addToQueue = (song) => {
-    setQueue([...queue, { ...song, votes: 0 }]);
+  const addToQueue = (song: SearchResults) => {
+    setQueue([
+      ...queue,
+      {
+        id: song.id,
+        name: song.name,
+        artist: song.artists.name,
+        votes: 0,
+      },
+    ]);
   };
 
-  const handleVote = (id, increment) => {
+  const handleVote = (id: string, increment: number) => {
     setQueue(
       queue
         .map((song) =>
@@ -77,10 +96,6 @@ export default function Stream() {
         .sort((a, b) => b.votes - a.votes)
     );
   };
-
-  // const handleStreamVote = (increment) => {
-  //   setStreamVotes((prevVotes) => prevVotes + increment);
-  // };
 
   const handleStreamVote = (increment: number) => {
     console.log("param", param);
@@ -98,6 +113,7 @@ export default function Stream() {
           body: JSON.stringify({ streamId: param }),
         });
       }
+      setStreamVotes((prevVotes) => prevVotes + increment);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -222,7 +238,7 @@ export default function Stream() {
                         {song.name}
                       </p>
                       <p className="text-sm text-purple-700 dark:text-purple-300">
-                        {song.artist} - {song.album}
+                        {song.artists.name} - {song.album.name}
                       </p>
                     </div>
                     <Button

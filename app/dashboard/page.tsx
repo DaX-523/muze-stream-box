@@ -8,12 +8,9 @@ import { Music, Users, Clock, BarChart2 } from "lucide-react";
 import ActionButton from "./ButtonAction";
 import { Key } from "react";
 import { headers } from "next/headers";
-import { getSession } from "next-auth/react";
 import Link from "next/link";
 
 export default async function DashboardComponent() {
-  const session = await getSession();
-  console.log("page", session);
   const data = await fetch(process.env.BASE_URL + "/api/streams", {
     headers: headers(),
   });

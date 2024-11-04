@@ -1,14 +1,22 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import DarkModeToggle from "./DarkModeToggle";
 import { Music } from "lucide-react";
 import { Button } from "./ui/button";
-
+import { redirectToSpotifyAuthorize } from "../hooks/useSpotifyAuthInitiate";
+import { isSpotifyTokenValid } from "../lib/spotify-auth-pkce";
 const AppBar: React.FC = () => {
-  const session = useSession();
-  console.log(session);
+  const { data, status } = useSession();
+  console.log(data);
+  useEffect(() => {
+    if (status === "authenticated" && !isSpotifyTokenValid()) {
+      console.log("redirecting to spotify authorize");
+
+      redirectToSpotifyAuthorize();
+    }
+  }, [status]);
 
   return (
     <header className="container mx-auto  py-4">
@@ -33,7 +41,7 @@ const AppBar: React.FC = () => {
           >
             How It Works
           </Link>
-          {!session.data?.user && (
+          {!data?.user && (
             <Button
               variant="outline"
               onClick={() => signIn()}
@@ -42,7 +50,7 @@ const AppBar: React.FC = () => {
               Log In
             </Button>
           )}
-          {session.data?.user && (
+          {data?.user && (
             <Button
               variant="outline"
               onClick={() => signOut()}
@@ -51,7 +59,7 @@ const AppBar: React.FC = () => {
               Log Out
             </Button>
           )}
-          {!session.data?.user && (
+          {!data?.user && (
             <Button
               onClick={() => signIn()}
               className="bg-purple-900 text-white hover:bg-purple-800 dark:bg-purple-100 dark:text-purple-900 dark:hover:bg-purple-200"
