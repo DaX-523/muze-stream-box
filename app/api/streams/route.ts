@@ -1,12 +1,13 @@
 import { authOptions } from "@/app/lib/auth-options";
 import prisma from "@/app/lib/db";
 import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST() {
   const session = await getServerSession(authOptions);
   console.log("api", session);
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json(
       { success: false, message: "You must be logged in to create a stream" },
       { status: 401 }
@@ -14,7 +15,7 @@ export async function POST() {
   }
 
   try {
-    await prisma.stream.create({
+    const stream = await prisma.stream.create({
       data: {
         userId: session?.user?.id,
         isActive: true,
@@ -24,7 +25,7 @@ export async function POST() {
     });
 
     return NextResponse.json(
-      { message: "Success" },
+      { message: "Success", stream },
       {
         status: 201,
       }
@@ -39,14 +40,36 @@ export async function POST() {
 }
 
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get("foo");
-
+  const session = await getServerSession();
+  const token = await getToken({ req });
+  // console.log("get api", session, token);
+  if (!session?.user?.email) {
+    return NextResponse.json(
+      { success: false, message: "You must be logged in to create a stream" },
+      { status: 401 }
+    );
+  }
   try {
     const streams = await prisma.stream.findMany({
-      where: { userId: userId ?? "" },
+      where: { userId: token?.userId ?? "" },
+      include: {
+        _count: {
+          select: {
+            upvotes: true,
+          },
+        },
+        upvotes: { where: { userId: session?.user?.id ?? "" } },
+      },
     });
     return NextResponse.json(
-      { message: "Success", streams },
+      {
+        message: "Success",
+        streams: streams.map(({ _count, ...rest }) => ({
+          ...rest,
+          upvotes: _count.upvotes,
+          hasUpvoted: rest.upvotes.length ? true : false,
+        })),
+      },
       {
         status: 200,
       }

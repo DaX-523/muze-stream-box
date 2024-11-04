@@ -3,9 +3,11 @@
 
 import { useState } from "react";
 import { Button } from "../components/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function ActionButton() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleClick = async () => {
     setLoading(true);
@@ -17,8 +19,10 @@ export default function ActionButton() {
           creatorId: "loml",
         }),
       });
+      if (!stream.ok) throw new Error("Something Went wrong!");
       const json = await stream.json();
       console.log(json);
+      router.push("/stream/" + json?.stream?.id);
     } catch (error) {
       console.error("Error:", error);
     } finally {

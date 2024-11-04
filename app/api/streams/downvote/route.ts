@@ -4,7 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const ParseBody = z.object({
-  streamId: z.string(),
+  streamId: z.object({
+    id: z.string(),
+  }),
 });
 
 export const POST = async (req: NextRequest) => {
@@ -17,16 +19,17 @@ export const POST = async (req: NextRequest) => {
   if (!userData)
     return NextResponse.json({ message: "Unauthorized." }, { status: 403 });
 
-  await prisma.upvote.delete({
-    where: {
-      userId_streamId: {
-        streamId: data?.streamId,
-        userId: userData?.id,
-      },
-    },
-  });
-
   try {
+    await prisma.upvote.delete({
+      where: {
+        userId_streamId: {
+          streamId: data?.streamId?.id,
+          userId: userData?.id,
+        },
+      },
+    });
+
+    return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

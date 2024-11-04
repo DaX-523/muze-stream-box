@@ -6,8 +6,21 @@ import {
 } from "@/app/components/ui/card";
 import { Music, Users, Clock, BarChart2 } from "lucide-react";
 import ActionButton from "./ButtonAction";
+import { Key } from "react";
+import { headers } from "next/headers";
+import { getSession } from "next-auth/react";
+import Link from "next/link";
 
-export default function DashboardComponent() {
+export default async function DashboardComponent() {
+  const session = await getSession();
+  console.log("page", session);
+  const data = await fetch(process.env.BASE_URL + "/api/streams", {
+    headers: headers(),
+  });
+  // let streams;
+  // console.log(data);
+  const { streams } = await data.json();
+  // console.log(streams);
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-200 to-indigo-200 dark:from-purple-900 dark:to-indigo-900 transition-colors duration-300">
       <main className="container mx-auto px-4 py-8">
@@ -100,6 +113,32 @@ export default function DashboardComponent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-200 dark:divide-purple-700">
+              {streams?.map(
+                (stream: {
+                  id: Key | null | undefined;
+                  extractedId: string;
+                  upvotes: number;
+                }) => (
+                  <tr key={stream?.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
+                      <Link href={`/stream/${stream?.id}`}>
+                        {stream?.extractedId}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
+                      <Link href={`/stream/${stream?.id}`}>2023-07-15</Link>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
+                      <Link href={`/stream/${stream?.id}`}>
+                        {stream?.upvotes}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
+                      <Link href={`/stream/${stream?.id}`}>2h 30m</Link>
+                    </td>
+                  </tr>
+                )
+              )}
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
                   Summer Vibes Mix
@@ -146,7 +185,7 @@ export default function DashboardComponent() {
           </table>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center cursor-pointer">
           <ActionButton />
         </div>
       </main>

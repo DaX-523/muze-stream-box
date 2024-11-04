@@ -13,16 +13,31 @@ export const authOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET ?? "secret",
   callbacks: {
-    async jwt({ account, token, user, profile }) {
-      console.log("jwt", account, token, user, profile);
-      if (account && profile) {
-        token.id = account?.access_token;
-        token.email = profile?.email as string;
+    async jwt({ account, token, profile }) {
+      // console.log("jwt", account, token, user, profile);
+      try {
+        if (account && profile) {
+          const user = await prisma.user.findUnique({
+            where: { email: token?.email ?? "" },
+          });
+
+          if (user) {
+            token.userId = user?.id;
+          }
+          token.id = account?.access_token;
+          token.email = profile?.email as string;
+        }
+      } catch (error) {
+        if (error instanceof PrismaClientInitializationError) {
+          throw new Error("Internal server error");
+        }
+        console.log(error);
+        throw error;
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      console.log("session", session, token);
+      // console.log("session", session, token);
 
       try {
         const user = await prisma.user.findUnique({
@@ -30,7 +45,7 @@ export const authOptions = {
         });
         if (user && session) {
           (session.user as { id: string }).id = user?.id as string;
-          console.log("in", session, user);
+          // console.log("in", session, user);
         }
       } catch (error) {
         if (error instanceof PrismaClientInitializationError) {
