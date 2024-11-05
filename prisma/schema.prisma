@@ -14,24 +14,52 @@ datasource db {
 }
 
 model User {
-  id       String   @id @default(uuid())
-  email    String   @unique
-  password String
-  provider Provider
-  streams  Stream[]
-  upvotes  Upvote[]
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  provider     Provider
+  streams      Stream[]
+  upvotes      Upvote[]
+  trackUpvotes TrackUpvote[]
 }
 
 model Stream {
-  id          String   @id @default(uuid())
-  isActive    Boolean  @default(true)
-  extractedId String
-  created     DateTime
-  userId      String
-  upvotes     Upvote[]
-  user        User     @relation(fields: [userId], references: [id])
+  id            String         @id @default(uuid())
+  isActive      Boolean        @default(true)
+  created       DateTime       @default(now())
+  activeMembers Int            @default(0)
+  userId        String
+  upvotes       Upvote[]
+  user          User           @relation(fields: [userId], references: [id])
+  currentTrack  CurrentTrack[]
+  tracks        Track[]
 }
 
+model Track {
+  id           String         @id //DEFAULT IS SPOTIFY TRACK ID
+  name         String
+  played       Boolean        @default(false)
+  uri          String
+  duration     Int
+  stream       Stream         @relation(fields: [streamId], references: [id])
+  streamId     String
+  currentTrack CurrentTrack[]
+  trackUpvotes TrackUpvote[]
+}
+
+model CurrentTrack {
+  trackId  String
+  streamId String
+
+  // Relations
+  track  Track  @relation(fields: [trackId], references: [id])
+  stream Stream @relation(fields: [streamId], references: [id])
+
+  // Compound primary key to ensure each stream has only one current track
+  @@id([streamId, trackId])
+}
+
+// this is for the stream upvotes
 model Upvote {
   id       Int    @id @default(autoincrement())
   userId   String
@@ -40,6 +68,16 @@ model Upvote {
   stream   Stream @relation(fields: [streamId], references: [id])
 
   @@unique([userId, streamId])
+}
+
+model TrackUpvote {
+  id      Int    @id @default(autoincrement())
+  userId  String
+  trackId String
+  user    User   @relation(fields: [userId], references: [id])
+  track   Track  @relation(fields: [trackId], references: [id])
+
+  @@unique([userId, trackId])
 }
 
 enum Provider {

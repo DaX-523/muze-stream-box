@@ -111,16 +111,10 @@ export default async function DashboardComponent() {
             </thead>
             <tbody className="divide-y divide-purple-200 dark:divide-purple-700">
               {streams?.map(
-                (stream: {
-                  id: Key | null | undefined;
-                  extractedId: string;
-                  upvotes: number;
-                }) => (
+                (stream: { id: Key | null | undefined; upvotes: number }) => (
                   <tr key={stream?.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
-                      <Link href={`/stream/${stream?.id}`}>
-                        {stream?.extractedId}
-                      </Link>
+                      <Link href={`/stream/${stream?.id}`}>{stream?.id}</Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-purple-900 dark:text-purple-100">
                       <Link href={`/stream/${stream?.id}`}>2023-07-15</Link>

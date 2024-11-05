@@ -39,7 +39,7 @@ export const isSpotifyTokenValid = () => {
 
 export const getRefreshToken = async () => {
   // refresh token that has been previously stored
-  const refreshToken = localStorage.getItem("refresh_token") as string;
+  const refreshToken = localStorage.getItem("spotify_refresh_token") as string;
   const url = spotifyTokenUrl;
 
   const payload = {
@@ -53,11 +53,22 @@ export const getRefreshToken = async () => {
       client_id: spotifyClientId,
     }),
   };
-  const body = await fetch(url, payload);
-  const response = await body.json();
+  try {
+    console.log(payload);
 
-  localStorage.setItem("spotify_access_token", response.accessToken);
-  if (response.refreshToken) {
-    localStorage.setItem("spotify_refresh_token", response.refreshToken);
+    const body = await fetch(url, payload);
+    if (!body.ok) {
+      console.log(body);
+
+      throw new Error("Failed to refresh Spotify token");
+    }
+    const response = await body.json();
+    console.log(response, response.access_token, response.refresh_token);
+    localStorage.setItem("spotify_access_token", response.access_token);
+    if (response.refreshToken) {
+      localStorage.setItem("spotify_refresh_token", response.refresh_token);
+    }
+  } catch (error) {
+    console.error("Error refreshing Spotify token:", error);
   }
 };

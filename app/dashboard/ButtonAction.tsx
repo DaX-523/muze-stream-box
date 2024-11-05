@@ -14,10 +14,6 @@ export default function ActionButton() {
     try {
       const stream = await fetch("/api/streams", {
         method: "POST",
-        credentials: "include",
-        body: JSON.stringify({
-          creatorId: "loml",
-        }),
       });
       if (!stream.ok) throw new Error("Something Went wrong!");
       const json = await stream.json();

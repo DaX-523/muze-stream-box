@@ -19,8 +19,6 @@ export async function POST() {
       data: {
         userId: session?.user?.id,
         isActive: true,
-        created: new Date(),
-        extractedId: "",
       },
     });
 
@@ -40,7 +38,9 @@ export async function POST() {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession();
+  const streamId = req.nextUrl.searchParams.get("streamId");
+
+  const session = await getServerSession(authOptions);
   const token = await getToken({ req });
   // console.log("get api", session, token);
   if (!session?.user?.email) {
@@ -49,25 +49,40 @@ export async function GET(req: NextRequest) {
       { status: 401 }
     );
   }
+
   try {
-    const streams = await prisma.stream.findMany({
-      where: { userId: token?.userId ?? "" },
-      include: {
-        _count: {
-          select: {
-            upvotes: true,
+    const [stream, streams] = await Promise.all([
+      await prisma.stream.findUnique({
+        where: { id: streamId ?? "" },
+        include: {
+          _count: {
+            select: {
+              upvotes: true,
+            },
+          },
+          upvotes: { where: { userId: session?.user?.id ?? "" } },
+        },
+      }),
+      await prisma.stream.findMany({
+        where: { userId: token?.userId ?? "" },
+        include: {
+          _count: {
+            select: {
+              upvotes: true,
+            },
           },
         },
-        upvotes: { where: { userId: session?.user?.id ?? "" } },
-      },
-    });
+      }),
+    ]);
     return NextResponse.json(
       {
         message: "Success",
+        stream,
+        hasUpvoted: stream?.upvotes.length ? true : false,
+
         streams: streams.map(({ _count, ...rest }) => ({
           ...rest,
           upvotes: _count.upvotes,
-          hasUpvoted: rest.upvotes.length ? true : false,
         })),
       },
       {

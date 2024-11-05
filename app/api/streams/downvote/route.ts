@@ -1,3 +1,4 @@
+import { authOptions } from "@/app/lib/auth-options";
 import prisma from "@/app/lib/db";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +12,7 @@ const ParseBody = z.object({
 
 export const POST = async (req: NextRequest) => {
   const data = ParseBody.parse(await req.json());
-  const user = await getServerSession();
+  const user = await getServerSession(authOptions);
 
   const userData = await prisma.user.findFirst({
     where: { email: user?.user?.email ?? "" },
@@ -20,6 +21,19 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ message: "Unauthorized." }, { status: 403 });
 
   try {
+    const existing = await prisma.upvote.findUnique({
+      where: {
+        userId_streamId: {
+          streamId: data?.streamId?.id,
+          userId: userData?.id,
+        },
+      },
+    });
+    if (!existing)
+      return NextResponse.json(
+        { message: "Already downvoted" },
+        { status: 400 }
+      );
     await prisma.upvote.delete({
       where: {
         userId_streamId: {
